@@ -1,26 +1,45 @@
 'use client';
 
 import { useEffect } from 'react';
-import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAuthStore } from '@/store/authStore';
 import { User } from '@/types';
 
+const STORAGE_KEY = 'panini_user_profile';
+
 export function useAuth() {
   const { user, isLoading, isInitialized, setUser, setLoading, setInitialized, logout } = useAuthStore();
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as User;
+          setUser(parsed);
+          setLoading(false);
+          setInitialized(true);
+          return;
+        } catch {}
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
-            setUser(userDoc.data() as User);
+            const userData = userDoc.data() as User;
+            setUser(userData);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+            }
           } else {
             setUser(null);
           }
-        } catch (error) {
+        } catch {
           setUser(null);
         }
       } else {
@@ -29,10 +48,10 @@ export function useAuth() {
       setLoading(false);
       setInitialized(true);
     });
+
     return () => unsubscribe();
   }, []);
 
-  // Create brand new user with anonymous auth
   const signIn = async (firstName: string, lastName: string) => {
     setLoading(true);
     try {
@@ -47,6 +66,9 @@ export function useAuth() {
         createdAt: new Date().toISOString(),
       };
       await setDoc(doc(db, 'users', uid), userData);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+      }
       setUser(userData);
       return userData;
     } catch (error) {
@@ -56,26 +78,19 @@ export function useAuth() {
     }
   };
 
-  // Sign in as an existing user by signing in anonymously 
-  // then loading their stored profile from Firestore
-  // We use localStorage to remember which profile was chosen
   const signInExisting = async (existingUser: User) => {
     setLoading(true);
     try {
-      // Sign in anonymously to get a Firebase auth session
-      const credential = await signInAnonymously(auth);
-      const uid = credential.user.uid;
-
-      // If this is a different UID than the stored one,
-      // we store the chosen profile in the user's auth document
-      // and save their choice to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('panini_chosen_uid', existingUser.uid);
+      const userDoc = await getDoc(doc(db, 'users', existingUser.uid));
+      if (!userDoc.exists()) {
+        throw new Error('User not found');
       }
-
-      // Set the user to the chosen existing profile
-      setUser(existingUser);
-      return existingUser;
+      const userData = userDoc.data() as User;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+      }
+      setUser(userData);
+      return userData;
     } catch (error) {
       throw error;
     } finally {
@@ -85,7 +100,7 @@ export function useAuth() {
 
   const signOut = async () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('panini_chosen_uid');
+      localStorage.removeItem(STORAGE_KEY);
     }
     await auth.signOut();
     logout();
