@@ -32,55 +32,98 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden"
-      style={{ background: '#080C14' }}>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px 16px',
+      background: '#080C14',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
       {/* Background orbs */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #4361EE, transparent 70%)' }} />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #7209B7, transparent 70%)' }} />
-        <div className="absolute top-[40%] right-[20%] w-[200px] h-[200px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #F5A623, transparent 70%)' }} />
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <div style={{
+          position: 'absolute', top: '-20%', left: '-10%',
+          width: '500px', height: '500px', borderRadius: '50%', opacity: 0.2,
+          background: 'radial-gradient(circle, #4361EE, transparent 70%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-20%', right: '-10%',
+          width: '400px', height: '400px', borderRadius: '50%', opacity: 0.15,
+          background: 'radial-gradient(circle, #7209B7, transparent 70%)',
+        }} />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-sm relative z-10"
+        transition={{ duration: 0.6 }}
+        style={{ width: '100%', maxWidth: '360px', position: 'relative', zIndex: 10 }}
       >
         {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.5, type: 'spring' }}
-            className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl mb-5 animate-float"
-            style={{ background: 'linear-gradient(135deg, #4361EE 0%, #7209B7 100%)', boxShadow: '0 0 40px rgba(67,97,238,0.4)' }}
-          >
-            ⚽
-          </motion.div>
-          <h1 className="font-display text-5xl gradient-text-gold tracking-wider text-center">PANINI</h1>
-          <p className="font-display text-xl mt-1" style={{ color: '#8899BB' }}>WORLD CUP 2026</p>
-          <p className="text-sm mt-3 text-center" style={{ color: '#4A5568' }}>Track stickers with your friends</p>
+            style={{
+              width: '80px', height: '80px', borderRadius: '22px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '36px', marginBottom: '20px',
+              background: 'linear-gradient(135deg, #4361EE 0%, #7209B7 100%)',
+              boxShadow: '0 0 40px rgba(67,97,238,0.4)',
+            }}
+          >⚽</motion.div>
+          <h1 style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '52px', lineHeight: 1,
+            background: 'linear-gradient(135deg, #F5A623, #FFD166)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            letterSpacing: '0.05em',
+            textAlign: 'center',
+          }}>PANINI</h1>
+          <p style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '18px', color: '#8899BB',
+            letterSpacing: '0.04em', marginTop: '4px',
+          }}>WORLD CUP 2026</p>
+          <p style={{ fontSize: '13px', color: '#4A5568', marginTop: '10px', textAlign: 'center' }}>
+            Track stickers with your friends
+          </p>
         </div>
 
         {/* Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="glass rounded-3xl p-8"
+          transition={{ delay: 0.2 }}
+          style={{
+            background: 'rgba(15,22,35,0.85)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '24px',
+            padding: '32px',
+          }}
         >
-          <h2 className="font-display text-2xl mb-1" style={{ color: '#F0F4FF' }}>JOIN THE CREW</h2>
-          <p className="text-sm mb-6" style={{ color: '#8899BB' }}>No password needed — just your name</p>
+          <h2 style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '26px', color: '#F0F4FF', marginBottom: '4px',
+          }}>JOIN THE CREW</h2>
+          <p style={{ fontSize: '13px', color: '#8899BB', marginBottom: '24px' }}>
+            No password needed — just your name
+          </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label className="text-xs font-semibold uppercase tracking-widest mb-2 block" style={{ color: '#8899BB' }}>
-                First Name
-              </label>
+              <label style={{
+                fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+                letterSpacing: '0.1em', color: '#8899BB', display: 'block', marginBottom: '8px',
+              }}>First Name</label>
               <input
                 type="text"
                 value={firstName}
@@ -88,12 +131,20 @@ export default function LoginPage() {
                 placeholder="Cristiano"
                 autoComplete="given-name"
                 disabled={loading}
+                style={{
+                  width: '100%', background: '#080C14',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#F0F4FF', borderRadius: '10px',
+                  padding: '12px 14px', fontSize: '15px',
+                  fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                }}
               />
             </div>
             <div>
-              <label className="text-xs font-semibold uppercase tracking-widest mb-2 block" style={{ color: '#8899BB' }}>
-                Last Name
-              </label>
+              <label style={{
+                fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+                letterSpacing: '0.1em', color: '#8899BB', display: 'block', marginBottom: '8px',
+              }}>Last Name</label>
               <input
                 type="text"
                 value={lastName}
@@ -101,6 +152,13 @@ export default function LoginPage() {
                 placeholder="Ronaldo"
                 autoComplete="family-name"
                 disabled={loading}
+                style={{
+                  width: '100%', background: '#080C14',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#F0F4FF', borderRadius: '10px',
+                  padding: '12px 14px', fontSize: '15px',
+                  fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                }}
               />
             </div>
 
@@ -109,27 +167,21 @@ export default function LoginPage() {
               disabled={loading}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              className="mt-2 w-full py-4 rounded-2xl font-display text-xl tracking-wider text-white relative overflow-hidden"
               style={{
+                marginTop: '8px', width: '100%', padding: '14px',
+                borderRadius: '14px', border: 'none', cursor: 'pointer',
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: '22px', letterSpacing: '0.05em', color: '#fff',
                 background: loading ? '#1a2340' : 'linear-gradient(135deg, #4361EE, #7209B7)',
                 boxShadow: loading ? 'none' : '0 0 30px rgba(67,97,238,0.4)',
-                transition: 'all 0.2s',
               }}
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" strokeWidth="3"/>
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                  </svg>
-                  JOINING...
-                </span>
-              ) : 'START COLLECTING'}
+              {loading ? 'JOINING...' : 'START COLLECTING'}
             </motion.button>
           </form>
         </motion.div>
 
-        <p className="text-center text-xs mt-6" style={{ color: '#2D3748' }}>
+        <p style={{ textAlign: 'center', fontSize: '11px', color: '#2D3748', marginTop: '20px' }}>
           Private app for friends only · No data sold
         </p>
       </motion.div>

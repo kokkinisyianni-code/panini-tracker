@@ -27,59 +27,110 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!isInitialized || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080C14' }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl animate-float"
-            style={{ background: 'linear-gradient(135deg, #4361EE, #7209B7)' }}>⚽</div>
-          <div className="font-display text-xl gradient-text-gold">LOADING...</div>
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: '#080C14',
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '16px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '24px', background: 'linear-gradient(135deg, #4361EE, #7209B7)',
+          }}>⚽</div>
+          <div style={{
+            fontFamily: "'Bebas Neue', sans-serif", fontSize: '20px',
+            background: 'linear-gradient(135deg, #F5A623, #FFD166)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>LOADING...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#080C14' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#080C14' }}>
       {/* Top header */}
-      <header className="sticky top-0 z-40 glass border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⚽</span>
-            <span className="font-display text-lg gradient-text-gold">PANINI 2026</span>
+      <header style={{
+        position: 'sticky', top: 0, zIndex: 40,
+        background: 'rgba(15,22,35,0.97)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(16px)',
+      }}>
+        <div style={{
+          maxWidth: '640px', margin: '0 auto', padding: '0 16px',
+          height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '20px' }}>⚽</span>
+            <span style={{
+              fontFamily: "'Bebas Neue', sans-serif", fontSize: '18px',
+              background: 'linear-gradient(135deg, #F5A623, #FFD166)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              letterSpacing: '0.04em',
+            }}>PANINI WC 2026</span>
           </div>
-          <Link href="/settings"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
-            style={{ background: 'rgba(255,255,255,0.05)', color: '#8899BB' }}>
-            <span className="text-base">👤</span>
-            <span className="font-medium">{user.firstName}</span>
+          <Link href="/settings" style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '6px 12px', borderRadius: '20px', textDecoration: 'none',
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            <div style={{
+              width: '26px', height: '26px', borderRadius: '8px',
+              background: 'linear-gradient(135deg, #4361EE, #7209B7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '11px', fontWeight: 700, color: '#fff',
+            }}>
+              {user.firstName[0]}{user.lastName[0]}
+            </div>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: '#F0F4FF' }}>{user.firstName}</span>
           </Link>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 pb-safe pt-4">
+      <main style={{
+        flex: 1, maxWidth: '640px', width: '100%',
+        margin: '0 auto', padding: '16px 16px 100px',
+      }}>
         {children}
       </main>
 
       {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 glass border-t"
-        style={{ borderColor: 'rgba(255,255,255,0.05)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="max-w-2xl mx-auto flex">
+      <nav style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+        background: 'rgba(15,22,35,0.97)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(16px)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex' }}>
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <Link key={item.href} href={item.href}
-                className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative transition-all"
-                style={{ color: isActive ? '#F5A623' : '#4A5568' }}>
+              <Link key={item.href} href={item.href} style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                padding: '8px 0', gap: '2px', textDecoration: 'none',
+                color: isActive ? '#F5A623' : '#4A5568',
+                position: 'relative', transition: 'color 0.2s',
+              }}>
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full"
-                    style={{ background: '#F5A623' }}
+                    style={{
+                      position: 'absolute', top: 0,
+                      left: '50%', transform: 'translateX(-50%)',
+                      width: '24px', height: '2px',
+                      borderRadius: '1px', background: '#F5A623',
+                    }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   />
                 )}
-                <span className="text-xl leading-none">{item.icon}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wide">{item.label}</span>
+                <span style={{ fontSize: '20px', lineHeight: 1 }}>{item.icon}</span>
+                <span style={{
+                  fontSize: '9px', fontWeight: 600,
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>{item.label}</span>
               </Link>
             );
           })}

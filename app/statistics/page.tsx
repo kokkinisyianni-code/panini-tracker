@@ -1,5 +1,4 @@
 'use client';
-
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -9,12 +8,6 @@ import { useAuthStore } from '@/store/authStore';
 import { fetchAllUsersStats, fetchUserCollection } from '@/hooks/useCollection';
 import { STICKERS, TEAMS, getStickersByTeam } from '@/lib/stickers-data';
 import { UserStats, CollectionEntry } from '@/types';
-
-interface TeamStat {
-  team: string;
-  total: number;
-  users: { uid: string; name: string; collected: number; pct: number }[];
-}
 
 export default function StatisticsPage() {
   const { user } = useAuthStore();
@@ -28,170 +21,107 @@ export default function StatisticsPage() {
       const stats = await fetchAllUsersStats();
       setAllUsers(stats);
       const cols: Record<string, Record<string, CollectionEntry>> = {};
-      for (const u of stats) {
-        cols[u.uid] = await fetchUserCollection(u.uid);
-      }
+      for (const u of stats) { cols[u.uid] = await fetchUserCollection(u.uid); }
       setAllCollections(cols);
       setLoading(false);
     };
     load();
   }, []);
 
-  const teamStats = useMemo((): TeamStat[] => {
-    const gameTeams = TEAMS.filter(t => t !== 'FIFA');
-    return gameTeams.map(team => {
-      const teamStickers = getStickersByTeam(team);
-      const teamIds = teamStickers.map(s => s.id);
-      const users = allUsers.map(u => {
-        const col = allCollections[u.uid] || {};
-        const collected = teamIds.filter(id => col[id]?.collected).length;
-        return {
-          uid: u.uid,
-          name: u.displayName,
-          collected,
-          pct: Math.round((collected / teamStickers.length) * 100),
-        };
-      }).sort((a, b) => b.pct - a.pct);
+  const gameTeams = TEAMS.filter(t => t !== 'FIFA');
+  const myStats = allUsers.find(u => u.uid === user?.uid);
 
-      return { team, total: teamStickers.length, users };
-    }).sort((a, b) => {
-      const myA = a.users.find(u => u.uid === user?.uid)?.pct ?? 0;
-      const myB = b.users.find(u => u.uid === user?.uid)?.pct ?? 0;
-      return myB - myA;
-    });
-  }, [allUsers, allCollections]);
-
-  const myOverallStats = useMemo(() => {
-    if (!user) return null;
-    return allUsers.find(u => u.uid === user.uid) || null;
-  }, [allUsers, user]);
+  const teamStats = useMemo(() => gameTeams.map(team => {
+    const ts = getStickersByTeam(team);
+    const users = allUsers.map(u => {
+      const col = allCollections[u.uid] || {};
+      const collected = ts.filter(s => col[s.id]?.collected).length;
+      return { uid: u.uid, name: u.displayName, firstName: u.firstName, lastName: u.lastName, collected, pct: Math.round(collected/ts.length*100) };
+    }).sort((a,b) => b.pct-a.pct);
+    return { team, total: ts.length, users };
+  }).sort((a,b) => {
+    const myA = a.users.find(u=>u.uid===user?.uid)?.pct??0;
+    const myB = b.users.find(u=>u.uid===user?.uid)?.pct??0;
+    return myB-myA;
+  }), [allUsers, allCollections]);
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-5 pb-4">
-        <div className="pt-1">
-          <h1 className="font-display text-4xl gradient-text-gold">STATISTICS</h1>
-          <p className="text-sm" style={{ color: '#8899BB' }}>Team-by-team progress breakdown</p>
+      <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
+        <div style={{ paddingTop:'4px' }}>
+          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'36px', lineHeight:1, background:'linear-gradient(135deg,#F5A623,#FFD166)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>STATISTICS</h1>
+          <p style={{ fontSize:'12px', color:'#8899BB' }}>Team-by-team breakdown</p>
         </div>
 
-        {/* My overall */}
-        {myOverallStats && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-2xl p-4"
-          >
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#8899BB' }}>Overall Progress</p>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { label: 'Total', value: myOverallStats.collected, color: '#F0F4FF' },
-                { label: 'Complete', value: `${myOverallStats.percentage}%`, color: '#4361EE' },
-                { label: 'Missing', value: myOverallStats.missing, color: '#EF233C' },
-                { label: 'Doubles', value: myOverallStats.duplicates, color: '#F5A623' },
-              ].map(s => (
-                <div key={s.label} className="text-center">
-                  <p className="font-display text-2xl" style={{ color: s.color }}>{s.value}</p>
-                  <p className="text-xs" style={{ color: '#4A5568' }}>{s.label}</p>
+        {/* Overall */}
+        {myStats && (
+          <div style={{ background:'rgba(15,22,35,0.85)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'14px', padding:'14px' }}>
+            <p style={{ fontSize:'10px', color:'#8899BB', textTransform:'uppercase', letterSpacing:'.1em', marginBottom:'12px' }}>Overall Progress</p>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'8px', textAlign:'center' }}>
+              {[{l:'Total',v:myStats.collected,c:'#F0F4FF'},{l:'Complete',v:`${myStats.percentage}%`,c:'#4361EE'},{l:'Missing',v:myStats.missing,c:'#EF233C'},{l:'Doubles',v:myStats.duplicates,c:'#F5A623'}].map(s=>(
+                <div key={s.l}>
+                  <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'24px', color:s.c }}>{s.v}</p>
+                  <p style={{ fontSize:'10px', color:'#4A5568' }}>{s.l}</p>
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Team list */}
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#8899BB' }}>By Team</p>
-          {loading ? (
-            Array(8).fill(0).map((_, i) => <div key={i} className="skeleton h-16 rounded-2xl" />)
-          ) : (
-            teamStats.map((ts, idx) => {
-              const myProgress = ts.users.find(u => u.uid === user?.uid);
-              const isExpanded = expandedTeam === ts.team;
-              const pct = myProgress?.pct ?? 0;
-              const isComplete = pct === 100;
-
-              return (
-                <motion.div
-                  key={ts.team}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.02 }}
-                >
-                  <motion.button
-                    onClick={() => setExpandedTeam(isExpanded ? null : ts.team)}
-                    className="w-full glass rounded-2xl px-4 py-3 text-left transition-all"
-                    style={{
-                      borderColor: isComplete ? 'rgba(6,214,160,0.3)' : 'rgba(255,255,255,0.06)',
-                      background: isComplete ? 'rgba(6,214,160,0.06)' : undefined,
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      {isComplete && <span className="text-base">🏆</span>}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="font-semibold text-sm" style={{ color: isComplete ? '#06D6A0' : '#F0F4FF' }}>
-                            {ts.team}
-                          </p>
-                          <span className="font-mono text-xs" style={{ color: '#8899BB' }}>
-                            {myProgress?.collected ?? 0}/{ts.total}
-                          </span>
-                        </div>
-                        <div className="w-full h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                          <motion.div
-                            className="h-1.5 rounded-full transition-all"
-                            style={{
-                              width: `${pct}%`,
-                              background: isComplete
-                                ? 'linear-gradient(90deg, #06D6A0, #4CC9F0)'
-                                : 'linear-gradient(90deg, #4361EE, #7209B7)',
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <span className="text-xs" style={{ color: '#4A5568' }}>{isExpanded ? '▲' : '▼'}</span>
+        <div>
+          <p style={{ fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'.1em', color:'#8899BB', marginBottom:'10px' }}>By Team</p>
+          {loading ? [0,1,2,3,4].map(i=><div key={i} style={{ height:'56px', borderRadius:'14px', background:'rgba(255,255,255,0.04)', marginBottom:'6px' }}/>)
+          : teamStats.map((ts,idx)=>{
+            const myP = ts.users.find(u=>u.uid===user?.uid);
+            const pct = myP?.pct??0;
+            const done = pct===100;
+            const isOpen = expandedTeam===ts.team;
+            return (
+              <div key={ts.team} style={{ marginBottom:'6px' }}>
+                <button onClick={()=>setExpandedTeam(isOpen?null:ts.team)} style={{
+                  width:'100%', textAlign:'left', cursor:'pointer', border:'none',
+                  background: done ? 'rgba(6,214,160,0.06)' : 'rgba(15,22,35,0.85)',
+                  borderRadius: isOpen ? '14px 14px 0 0' : '14px',
+                  outline: `1px solid ${done?'rgba(6,214,160,0.25)':'rgba(255,255,255,0.07)'}`,
+                  padding:'10px 14px',
+                }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'6px' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+                      {done && <span style={{ fontSize:'14px' }}>🏆</span>}
+                      <span style={{ fontSize:'13px', fontWeight:600, color: done?'#06D6A0':'#F0F4FF' }}>{ts.team}</span>
                     </div>
-                  </motion.button>
-
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="glass-light rounded-b-2xl px-4 py-3 -mt-2 pt-4 flex flex-col gap-2">
-                          {ts.users.map((u, i) => (
-                            <div key={u.uid} className="flex items-center gap-2">
-                              <span className="text-sm w-5">{['🥇','🥈','🥉'][i] || `#${i+1}`}</span>
-                              <p className="text-xs font-medium w-20 truncate"
-                                style={{ color: u.uid === user?.uid ? '#F5A623' : '#8899BB' }}>
-                                {u.name.split(' ')[0]}
-                              </p>
-                              <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                                <div className="h-1 rounded-full transition-all"
-                                  style={{
-                                    width: `${u.pct}%`,
-                                    background: u.uid === user?.uid
-                                      ? 'linear-gradient(90deg, #F5A623, #FFD166)'
-                                      : 'linear-gradient(90deg, #4361EE, #7209B7)',
-                                  }}
-                                />
-                              </div>
-                              <span className="font-mono text-xs w-8 text-right"
-                                style={{ color: u.pct === 100 ? '#06D6A0' : '#4A5568' }}>
-                                {u.pct}%
-                              </span>
+                    <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                      <span style={{ fontFamily:'monospace', fontSize:'10px', color:'#8899BB' }}>{myP?.collected??0}/{ts.total}</span>
+                      <span style={{ fontSize:'11px', color:'#4A5568' }}>{isOpen?'▲':'▼'}</span>
+                    </div>
+                  </div>
+                  <div style={{ width:'100%', height:'4px', background:'rgba(255,255,255,0.05)', borderRadius:'9px', overflow:'hidden' }}>
+                    <div style={{ height:'100%', width:`${pct}%`, background: done?'linear-gradient(90deg,#06D6A0,#4CC9F0)':'linear-gradient(90deg,#F5A623,#FFD166)', borderRadius:'9px', transition:'width .5s' }}/>
+                  </div>
+                </button>
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}}
+                      style={{ overflow:'hidden', background:'rgba(20,28,46,0.6)', border:'1px solid rgba(255,255,255,0.07)', borderTop:'none', borderRadius:'0 0 14px 14px', padding:'10px 14px' }}>
+                      <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                        {ts.users.map((u,i)=>(
+                          <div key={u.uid} style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                            <span style={{ fontSize:'11px', width:'20px' }}>{['🥇','🥈','🥉'][i]||`#${i+1}`}</span>
+                            <span style={{ fontSize:'11px', fontWeight:500, width:'60px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color: u.uid===user?.uid?'#F5A623':'#8899BB' }}>{u.firstName}</span>
+                            <div style={{ flex:1, height:'3px', background:'rgba(255,255,255,0.05)', borderRadius:'9px', overflow:'hidden' }}>
+                              <div style={{ height:'100%', width:`${u.pct}%`, background: u.uid===user?.uid?'linear-gradient(90deg,#F5A623,#FFD166)':'linear-gradient(90deg,#4361EE,#7209B7)', borderRadius:'9px' }}/>
                             </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })
-          )}
+                            <span style={{ fontFamily:'monospace', fontSize:'10px', color: u.pct===100?'#06D6A0':'#4A5568', width:'30px', textAlign:'right' }}>{u.pct}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </div>
       </div>
     </AppLayout>

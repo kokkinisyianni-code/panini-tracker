@@ -1,5 +1,4 @@
 'use client';
-
 export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
@@ -11,8 +10,12 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/authStore';
 import { useCollection } from '@/hooks/useCollection';
-import { STICKERS } from '@/lib/stickers-data';
 import toast from 'react-hot-toast';
+
+const S = {
+  card: { background:'rgba(15,22,35,0.85)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'16px', padding:'16px' },
+  label: { fontSize:'10px', fontWeight:600 as const, textTransform:'uppercase' as const, letterSpacing:'.1em', color:'#8899BB', display:'block' as const, marginBottom:'6px' },
+};
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -21,214 +24,116 @@ export default function SettingsPage() {
   const { collection: myCollection } = useCollection();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [saving, setSaving] = useState(false);
-  const [resetting, setResetting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const handleSaveDisplayName = async () => {
+  const handleSave = async () => {
     if (!user || !displayName.trim()) return;
     setSaving(true);
     try {
       await updateDoc(doc(db, 'users', user.uid), { displayName: displayName.trim() });
       setUser({ ...user, displayName: displayName.trim() });
       toast.success('Display name updated!');
-    } catch (e) {
-      toast.error('Failed to update name');
-    } finally {
-      setSaving(false);
-    }
+    } catch { toast.error('Failed to update'); }
+    finally { setSaving(false); }
   };
 
   const handleExport = () => {
-    const data = {
-      user: { displayName: user?.displayName, uid: user?.uid },
-      exportedAt: new Date().toISOString(),
-      collection: Object.values(myCollection),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const data = { user: { displayName: user?.displayName }, exportedAt: new Date().toISOString(), collection: Object.values(myCollection) };
+    const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `panini-collection-${user?.firstName?.toLowerCase()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Collection exported!');
+    const a = document.createElement('a'); a.href=url; a.download=`panini-${user?.firstName?.toLowerCase()}.json`; a.click();
+    URL.revokeObjectURL(url); toast.success('Exported!');
   };
 
   const handleReset = async () => {
     if (!user) return;
-    setResetting(true);
     try {
-      const q = query(collection(db, 'collections'), where('userId', '==', user.uid));
+      const q = query(collection(db,'collections'),where('userId','==',user.uid));
       const snap = await getDocs(q);
       const batch = writeBatch(db);
-      snap.forEach(d => batch.delete(d.ref));
+      snap.forEach(d=>batch.delete(d.ref));
       await batch.commit();
-      toast.success('Collection reset successfully');
+      toast.success('Collection reset!');
       setShowResetConfirm(false);
-      router.refresh();
-    } catch (e) {
-      toast.error('Failed to reset collection');
-    } finally {
-      setResetting(false);
-    }
+    } catch { toast.error('Failed to reset'); }
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    router.push('/login');
-  };
-
-  const collectedCount = Object.values(myCollection).filter(e => e.collected).length;
+  const collected = Object.values(myCollection).filter(e=>e.collected).length;
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-5 pb-4">
-        <div className="pt-1">
-          <h1 className="font-display text-4xl gradient-text-gold">SETTINGS</h1>
-          <p className="text-sm" style={{ color: '#8899BB' }}>Manage your account</p>
+      <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
+        <div style={{ paddingTop:'4px' }}>
+          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'36px', lineHeight:1, background:'linear-gradient(135deg,#F5A623,#FFD166)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>SETTINGS</h1>
         </div>
 
-        {/* Profile card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-3xl p-5"
-        >
-          <div className="flex items-center gap-4 mb-5">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-display text-2xl"
-              style={{ background: 'linear-gradient(135deg, #4361EE, #7209B7)', color: '#fff' }}>
+        {/* Profile */}
+        <div style={S.card}>
+          <div style={{ display:'flex', alignItems:'center', gap:'14px', marginBottom:'18px' }}>
+            <div style={{ width:'52px', height:'52px', borderRadius:'14px', background:'linear-gradient(135deg,#4361EE,#7209B7)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Bebas Neue',sans-serif", fontSize:'20px', color:'#fff' }}>
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </div>
             <div>
-              <p className="font-semibold" style={{ color: '#F0F4FF' }}>{user?.displayName}</p>
-              <p className="text-sm" style={{ color: '#8899BB' }}>
-                Collecting since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: '#4A5568' }}>UID: {user?.uid?.slice(0, 8)}...</p>
+              <p style={{ fontWeight:600, color:'#F0F4FF', marginBottom:'2px' }}>{user?.displayName}</p>
+              <p style={{ fontSize:'11px', color:'#8899BB' }}>Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</p>
             </div>
           </div>
-
-          <label className="text-xs font-semibold uppercase tracking-widest mb-2 block" style={{ color: '#8899BB' }}>
-            Display Name
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              placeholder="Your display name"
-              className="flex-1"
-            />
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSaveDisplayName}
-              disabled={saving}
-              className="px-4 py-2 rounded-xl text-sm font-bold"
-              style={{ background: 'linear-gradient(135deg, #4361EE, #7209B7)', color: '#fff' }}
-            >
-              {saving ? '...' : 'Save'}
+          <label style={S.label}>Display Name</label>
+          <div style={{ display:'flex', gap:'8px' }}>
+            <input type="text" value={displayName} onChange={e=>setDisplayName(e.target.value)} style={{ flex:1, background:'#080C14', border:'1px solid rgba(255,255,255,0.1)', color:'#F0F4FF', borderRadius:'10px', padding:'10px 14px', fontSize:'14px', fontFamily:"'DM Sans',sans-serif", outline:'none' }} />
+            <motion.button whileTap={{scale:0.95}} onClick={handleSave} disabled={saving} style={{ padding:'10px 16px', borderRadius:'10px', background:'linear-gradient(135deg,#4361EE,#7209B7)', color:'#fff', border:'none', fontWeight:700, fontSize:'13px', cursor:'pointer' }}>
+              {saving?'...':'Save'}
             </motion.button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass rounded-2xl p-4"
-        >
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#8899BB' }}>Collection Stats</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center">
-              <p className="font-display text-3xl gradient-text-blue">{collectedCount}</p>
-              <p className="text-xs" style={{ color: '#4A5568' }}>Stickers collected</p>
+        <div style={S.card}>
+          <p style={{ ...S.label, marginBottom:'12px' }}>Collection Stats</p>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', textAlign:'center' }}>
+            <div>
+              <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'32px', background:'linear-gradient(135deg,#4361EE,#7209B7)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>{collected}</p>
+              <p style={{ fontSize:'11px', color:'#4A5568' }}>Collected</p>
             </div>
-            <div className="text-center">
-              <p className="font-display text-3xl gradient-text-gold">
-                {Object.values(myCollection).reduce((s, e) => s + (e.duplicates || 0), 0)}
-              </p>
-              <p className="text-xs" style={{ color: '#4A5568' }}>Duplicates</p>
+            <div>
+              <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'32px', background:'linear-gradient(135deg,#F5A623,#FFD166)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>{Object.values(myCollection).reduce((s,e)=>s+(e.duplicates||0),0)}</p>
+              <p style={{ fontSize:'11px', color:'#4A5568' }}>Duplicates</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-col gap-3"
-        >
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#8899BB' }}>Data</p>
+        <motion.button whileTap={{scale:0.97}} onClick={handleExport} style={{ ...S.card, display:'flex', alignItems:'center', gap:'14px', cursor:'pointer', border:'1px solid rgba(255,255,255,0.07)', width:'100%', textAlign:'left' as const }}>
+          <span style={{ fontSize:'24px' }}>📤</span>
+          <div>
+            <p style={{ fontWeight:600, fontSize:'14px', color:'#F0F4FF' }}>Export Collection</p>
+            <p style={{ fontSize:'11px', color:'#4A5568' }}>Download as JSON</p>
+          </div>
+        </motion.button>
 
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleExport}
-            className="glass rounded-2xl px-4 py-4 flex items-center gap-3 text-left"
-          >
-            <span className="text-2xl">📤</span>
+        {!showResetConfirm ? (
+          <motion.button whileTap={{scale:0.97}} onClick={()=>setShowResetConfirm(true)} style={{ ...S.card, display:'flex', alignItems:'center', gap:'14px', cursor:'pointer', border:'1px solid rgba(239,35,60,0.15)', width:'100%', textAlign:'left' as const }}>
+            <span style={{ fontSize:'24px' }}>🗑️</span>
             <div>
-              <p className="font-semibold text-sm" style={{ color: '#F0F4FF' }}>Export Collection</p>
-              <p className="text-xs" style={{ color: '#4A5568' }}>Download as JSON file</p>
+              <p style={{ fontWeight:600, fontSize:'14px', color:'#EF233C' }}>Reset Collection</p>
+              <p style={{ fontSize:'11px', color:'#4A5568' }}>Delete all stickers</p>
             </div>
           </motion.button>
+        ) : (
+          <div style={{ background:'rgba(239,35,60,0.08)', border:'1px solid rgba(239,35,60,0.3)', borderRadius:'16px', padding:'16px' }}>
+            <p style={{ fontWeight:600, color:'#EF233C', marginBottom:'6px' }}>⚠️ Are you sure?</p>
+            <p style={{ fontSize:'12px', color:'#8899BB', marginBottom:'14px' }}>This will delete all {collected} stickers. Cannot be undone.</p>
+            <div style={{ display:'flex', gap:'8px' }}>
+              <button onClick={()=>setShowResetConfirm(false)} style={{ flex:1, padding:'10px', borderRadius:'10px', background:'rgba(255,255,255,0.06)', color:'#8899BB', border:'none', cursor:'pointer', fontWeight:600 }}>Cancel</button>
+              <button onClick={handleReset} style={{ flex:1, padding:'10px', borderRadius:'10px', background:'#EF233C', color:'#fff', border:'none', cursor:'pointer', fontWeight:700 }}>Reset</button>
+            </div>
+          </div>
+        )}
 
-          {!showResetConfirm ? (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setShowResetConfirm(true)}
-              className="glass rounded-2xl px-4 py-4 flex items-center gap-3 text-left"
-              style={{ borderColor: 'rgba(239,35,60,0.15)' }}
-            >
-              <span className="text-2xl">🗑️</span>
-              <div>
-                <p className="font-semibold text-sm" style={{ color: '#EF233C' }}>Reset Collection</p>
-                <p className="text-xs" style={{ color: '#4A5568' }}>Delete all collected stickers</p>
-              </div>
-            </motion.button>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="rounded-2xl p-4"
-              style={{ background: 'rgba(239,35,60,0.1)', border: '1px solid rgba(239,35,60,0.3)' }}
-            >
-              <p className="font-semibold text-sm mb-1" style={{ color: '#EF233C' }}>⚠️ Are you sure?</p>
-              <p className="text-xs mb-3" style={{ color: '#8899BB' }}>
-                This will delete all {collectedCount} collected stickers. This cannot be undone.
-              </p>
-              <div className="flex gap-2">
-                <button onClick={() => setShowResetConfirm(false)}
-                  className="flex-1 py-2 rounded-xl text-sm font-semibold"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: '#8899BB' }}>
-                  Cancel
-                </button>
-                <button onClick={handleReset} disabled={resetting}
-                  className="flex-1 py-2 rounded-xl text-sm font-bold"
-                  style={{ background: '#EF233C', color: '#fff' }}>
-                  {resetting ? 'Resetting...' : 'Yes, Reset'}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </motion.div>
-
-        {/* Sign out */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleLogout}
-            className="w-full py-4 rounded-2xl font-display text-xl tracking-wider"
-            style={{ background: 'rgba(255,255,255,0.04)', color: '#4A5568', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            SIGN OUT
-          </motion.button>
-        </motion.div>
+        <motion.button whileTap={{scale:0.97}} onClick={async()=>{await signOut();router.push('/login');}}
+          style={{ padding:'16px', borderRadius:'16px', background:'rgba(255,255,255,0.04)', color:'#4A5568', border:'1px solid rgba(255,255,255,0.06)', fontFamily:"'Bebas Neue',sans-serif", fontSize:'22px', letterSpacing:'.05em', cursor:'pointer', width:'100%' }}>
+          SIGN OUT
+        </motion.button>
       </div>
     </AppLayout>
   );
